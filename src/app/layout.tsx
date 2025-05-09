@@ -6,6 +6,12 @@ import AuthProvider from '@/components/AuthProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#151422',  // 어두운 배경색과 일치하도록 변경
+}
+
 export const metadata: Metadata = {
   title: '바이브코딩 돈버는 아이디어 모음',
   description: '매일 업데이트되는 다양한 수익 창출 아이디어를 발견하고, 공유하고, 발전시키는 공간입니다. AI, SaaS, 부업, 투자 전략 등 경제적 자유를 위한 아이디어를 찾아보세요.',
@@ -49,9 +55,7 @@ export const metadata: Metadata = {
     images: ['https://idaa.vercel.app/og-image.jpg'],
   },
   
-  // 추가 메타데이터
-  viewport: 'width=device-width, initial-scale=1',
-  themeColor: '#a48eff',
+  // 비즈니스 카테고리
   category: 'business',
 }
 
