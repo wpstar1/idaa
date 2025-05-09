@@ -64,7 +64,7 @@ ${idea.revenue || '후원 기반 또는 프리미엄 구독 모델'}
 `;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8 bg-[#151422]">
       <BackButton />
       
       <div className="bg-[#1e1c31] border border-[#2d2b42] shadow-lg rounded-xl overflow-hidden">
