@@ -1,9 +1,9 @@
-import NextAuth from 'next-auth';
+import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { supabaseAdmin } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
+import { supabaseAdmin } from './supabase';
 
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -13,12 +13,11 @@ const handler = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) {
-          console.log("사용자 이름 또는 비밀번호가 제공되지 않았습니다.");
           return null;
         }
 
         try {
-          console.log(`로그인 시도: ${credentials.username}`);
+          console.log("로그인 시도:", credentials.username);
           
           // 사용자 조회 (관리자 권한 사용)
           const { data: user, error } = await supabaseAdmin
@@ -26,6 +25,8 @@ const handler = NextAuth({
             .select('*')
             .eq('name', credentials.username)
             .single();
+          
+          console.log("사용자 조회 결과:", user ? user.id : null, "에러:", error ? error.message : null);
           
           if (error) {
             console.log("사용자 조회 오류:", error.message);
@@ -37,25 +38,23 @@ const handler = NextAuth({
             return null;
           }
           
-          console.log("사용자 찾음:", user.id);
-          
           // 비밀번호 확인
-          const isValidPassword = await bcrypt.compare(credentials.password, user.password);
+          console.log("비밀번호 확인 시도");
+          const passwordMatch = await bcrypt.compare(credentials.password, user.password);
+          console.log("비밀번호 일치 여부:", passwordMatch);
           
-          if (!isValidPassword) {
+          if (!passwordMatch) {
             console.log("비밀번호가 일치하지 않습니다.");
             return null;
           }
           
-          console.log("로그인 성공");
-          
           return {
             id: user.id,
             name: user.name,
-            email: user.email || `${user.name}@example.com`
+            email: user.email || undefined,
           };
         } catch (error) {
-          console.error("로그인 과정에서 예외 발생:", error);
+          console.error('로그인 오류:', error);
           return null;
         }
       }
@@ -82,7 +81,7 @@ const handler = NextAuth({
   session: {
     strategy: 'jwt',
   },
-  debug: process.env.NODE_ENV === 'development',
-});
+  secret: process.env.NEXTAUTH_SECRET,
+};
 
-export { handler as GET, handler as POST };
+export default authOptions;

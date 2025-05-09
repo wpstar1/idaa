@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   }
   
   try {
-    const supabase = createClientComponentClient();
+    const supabase = supabaseAdmin;
     
     // 북마크 확인
     const { data, error } = await supabase

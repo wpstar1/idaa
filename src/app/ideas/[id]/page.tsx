@@ -7,7 +7,9 @@ import BackButton from '@/components/BackButton';
 
 // 동적 메타데이터 생성
 export async function generateMetadata({ params }: { params: { id: string } }) {
-  const idea = await getIdeaById(params.id);
+  // params 객체 자체를 먼저 사용
+  const id = params?.id;
+  const idea = await getIdeaById(id);
 
   if (!idea) {
     return {
@@ -22,8 +24,10 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
 }
 
 export default async function IdeaDetailPage({ params }: { params: { id: string } }) {
-  const idea = await getIdeaById(params.id);
-  const comments = await getCommentsByIdeaId(params.id);
+  // params 객체 자체를 먼저 사용
+  const id = params?.id;
+  const idea = await getIdeaById(id);
+  const comments = await getCommentsByIdeaId(id);
 
   if (!idea) {
     notFound();

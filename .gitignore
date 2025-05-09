@@ -32,6 +32,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+.env.local
+.env.development
+.env.test
+.env.production
 
 # vercel
 .vercel
@@ -39,3 +43,20 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 불필요한 SQL 파일들 (하나로 통합됨)
+supabase_fix.sql
+supabase_fix_all.sql
+supabase_fix_final.sql
+supabase_fix_rls.sql
+supabase_tables.sql
+supabase_tables_updated.sql
+update_ideas.sql
+
+# 로컬 백업 및 임시 파일
+*.bak
+*.tmp
+*.log
+
+# 불필요한 디렉토리
+/prisma

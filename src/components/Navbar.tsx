@@ -35,16 +35,7 @@ export default function Navbar() {
               >
                 홈
               </Link>
-              <Link
-                href="/ideas"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  pathname === '/ideas'
-                    ? 'border-[#a48eff] text-[#a48eff]'
-                    : 'border-transparent text-gray-300 hover:text-white hover:border-gray-500'
-                }`}
-              >
-                아이디어 전체
-              </Link>
+              {/* 아이디어 전체 메뉴 삭제 */}
             </div>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
@@ -52,7 +43,11 @@ export default function Navbar() {
               <div className="flex items-center space-x-4">
                 <Link
                   href="/bookmarks"
-                  className="text-gray-300 hover:text-white"
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    pathname === '/bookmarks'
+                      ? 'border-[#a48eff] text-[#a48eff]'
+                      : 'border-transparent text-gray-300 hover:text-white hover:border-gray-500'
+                  }`}
                 >
                   북마크
                 </Link>

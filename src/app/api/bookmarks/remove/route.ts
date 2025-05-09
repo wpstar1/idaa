@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function DELETE(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -23,20 +23,29 @@ export async function DELETE(request: NextRequest) {
   }
   
   try {
-    const supabase = createClientComponentClient();
+    const supabase = supabaseAdmin;
     
     // 북마크 삭제
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('bookmarks')
       .delete()
       .eq('user_id', session.user.id)
-      .eq('idea_id', ideaId);
+      .eq('idea_id', ideaId)
+      .select();
     
     if (error) {
       console.error('북마크 삭제 실패:', error);
       return NextResponse.json(
-        { message: '북마크를 삭제하는 데 실패했습니다.' },
+        { message: '북마크를 삭제하는 데 실패했습니다.', details: error.message },
         { status: 500 }
+      );
+    }
+    
+    // 삭제된 항목이 없는 경우 (이미 북마크가 없는 경우)
+    if (data && data.length === 0) {
+      return NextResponse.json(
+        { message: '삭제할 북마크가 없습니다.' },
+        { status: 404 }
       );
     }
     

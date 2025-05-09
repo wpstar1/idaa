@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function DELETE(
   request: NextRequest,
@@ -19,7 +19,7 @@ export async function DELETE(
   const commentId = params.id;
   
   try {
-    const supabase = createClientComponentClient();
+    const supabase = supabaseAdmin;
     
     // 해당 댓글이 요청한 사용자의 것인지 확인
     const { data: comment, error: fetchError } = await supabase
@@ -44,16 +44,24 @@ export async function DELETE(
     }
     
     // 댓글 삭제
-    const { error: deleteError } = await supabase
+    const { data: deletedComment, error: deleteError } = await supabase
       .from('comments')
       .delete()
-      .eq('id', commentId);
+      .eq('id', commentId)
+      .select();
     
     if (deleteError) {
       console.error('댓글 삭제 실패:', deleteError);
       return NextResponse.json(
-        { message: '댓글을 삭제하는 데 실패했습니다.' },
+        { message: '댓글을 삭제하는 데 실패했습니다.', details: deleteError.message },
         { status: 500 }
+      );
+    }
+    
+    if (!deletedComment || deletedComment.length === 0) {
+      return NextResponse.json(
+        { message: '삭제할 댓글을 찾을 수 없습니다.' },
+        { status: 404 }
       );
     }
     

@@ -38,23 +38,32 @@ export default function BookmarkButton({ ideaId }: { ideaId: string }) {
     setIsLoading(true);
 
     try {
-      const url = isBookmarked
-        ? `/api/bookmarks/remove?ideaId=${ideaId}`
-        : `/api/bookmarks/add`;
-
-      const method = isBookmarked ? 'DELETE' : 'POST';
-      const body = isBookmarked ? undefined : JSON.stringify({ ideaId });
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body,
-      });
-
-      if (!response.ok) {
-        throw new Error('북마크 처리 중 오류가 발생했습니다.');
+      // 북마크 추가/제거를 위한 API 호출 방식 변경
+      if (isBookmarked) {
+        // 북마크 제거
+        const response = await fetch(`/api/bookmarks/remove?ideaId=${ideaId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('북마크 제거 중 오류가 발생했습니다.');
+        }
+      } else {
+        // 북마크 추가
+        const response = await fetch('/api/bookmarks/add', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ideaId })
+        });
+        
+        if (!response.ok) {
+          throw new Error('북마크 추가 중 오류가 발생했습니다.');
+        }
       }
 
       // 북마크 상태 토글
@@ -62,7 +71,7 @@ export default function BookmarkButton({ ideaId }: { ideaId: string }) {
       router.refresh();
     } catch (error) {
       console.error('북마크 처리 실패:', error);
-      alert('북마크 처리 중 오류가 발생했습니다.');
+      alert(error instanceof Error ? error.message : '북마크 처리 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }

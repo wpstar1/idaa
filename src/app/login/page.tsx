@@ -18,11 +18,10 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // 아이디로 로그인 (내부적으로 이메일로 변환)
-      const email = `${username}@example.com`;
+      // NextAuth의 credentials provider에 맞게 username으로 전송
       const result = await signIn('credentials', {
         redirect: false,
-        email,
+        username, // email 대신 username 사용
         password,
       });
 

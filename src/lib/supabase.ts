@@ -1,15 +1,31 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase 클라이언트 생성
-// 환경 변수에서 URL과 익명 키를 가져옵니다
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
+// 일반 Supabase 클라이언트 생성 함수 (익명 키 사용)
+export const createSupabaseClient = () => {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-// 서비스 롤 키 (관리자 권한이 필요한 작업용)
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Supabase URL과 Anon Key가 설정되지 않았습니다.');
+  }
 
-// 기본 Supabase 클라이언트 (익명 키 사용 - 일반 사용자용)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  return createClient(supabaseUrl, supabaseAnonKey);
+};
 
-// 관리자 Supabase 클라이언트 (서비스 롤 키 사용 - 관리자용)
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
+// 서비스 역할 키를 사용하는 관리자 Supabase 클라이언트 생성 함수
+export const createSupabaseAdminClient = () => {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error('Supabase URL과 Service Role Key가 설정되지 않았습니다.');
+  }
+
+  return createClient(supabaseUrl, supabaseServiceRoleKey);
+};
+
+// 서버 측에서 사용할 일반 Supabase 클라이언트
+export const supabaseServer = createSupabaseClient();
+
+// 서버 측에서 사용할 관리자 Supabase 클라이언트 (RLS 우회)
+export const supabaseAdmin = createSupabaseAdminClient();

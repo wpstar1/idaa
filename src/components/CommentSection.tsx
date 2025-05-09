@@ -10,7 +10,7 @@ type CommentWithUser = CommentType & {
   users?: {
     id: string;
     name: string | null;
-    image?: string | null;
+    // image 필드 제거 (데이터베이스에 해당 필드가 없음)
   };
 };
 

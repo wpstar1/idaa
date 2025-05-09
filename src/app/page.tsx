@@ -34,8 +34,8 @@ export default async function Home() {
                     자세히 보기
                   </Link>
                   <div className="flex space-x-3 text-gray-400">
-                    <span>💬 0</span>
-                    <span>⭐ 0</span>
+                    <span>💬 {idea.comment_count || 0}</span>
+                    <span>⭐ {idea.bookmark_count || 0}</span>
                   </div>
                 </div>
               </div>
