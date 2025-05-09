@@ -26,16 +26,15 @@ export default function Navbar() {
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               <Link
-                href="/"
+                href="/about"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  pathname === '/'
+                  pathname === '/about'
                     ? 'border-[#a48eff] text-[#a48eff]'
                     : 'border-transparent text-gray-300 hover:text-white hover:border-gray-500'
                 }`}
               >
-                홈
+                소개
               </Link>
-              {/* 아이디어 전체 메뉴 삭제 */}
             </div>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
@@ -115,24 +114,14 @@ export default function Navbar() {
         <div className="sm:hidden bg-[#1e1c31]">
           <div className="pt-2 pb-3 space-y-1">
             <Link
-              href="/"
+              href="/about"
               className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-                pathname === '/'
+                pathname === '/about'
                   ? 'border-[#a48eff] text-[#a48eff] bg-[#2d2b42]'
                   : 'border-transparent text-gray-300 hover:text-white hover:bg-[#2d2b42]'
               }`}
             >
-              홈
-            </Link>
-            <Link
-              href="/ideas"
-              className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-                pathname === '/ideas'
-                  ? 'border-[#a48eff] text-[#a48eff] bg-[#2d2b42]'
-                  : 'border-transparent text-gray-300 hover:text-white hover:bg-[#2d2b42]'
-              }`}
-            >
-              아이디어 전체
+              소개
             </Link>
           </div>
           <div className="pt-4 pb-3 border-t border-[#2d2b42]">
