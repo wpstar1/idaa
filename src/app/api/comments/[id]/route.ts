@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export async function DELETE(
-  request: NextRequest,
+  _: NextRequest,
   context: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
@@ -16,7 +16,7 @@ export async function DELETE(
     );
   }
   
-  const commentId = params.id;
+  const commentId = context.params.id;
   
   try {
     const supabase = supabaseAdmin;
