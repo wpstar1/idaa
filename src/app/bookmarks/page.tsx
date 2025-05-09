@@ -10,6 +10,10 @@ export const metadata = {
   description: '내가 북마크한 아이디어 목록을 확인해보세요.',
 };
 
+export const viewport = {
+  themeColor: '#151422',
+};
+
 export default async function BookmarksPage() {
   const session = await getServerSession(authOptions);
 
