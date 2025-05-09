@@ -1,0 +1,9 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/daily-ideas",
+      "schedule": "0 8 * * *"
+    }
+  ],
+  "version": 2
+}

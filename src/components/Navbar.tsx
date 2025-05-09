@@ -22,7 +22,7 @@ export default function Navbar() {
             <div className="flex-shrink-0 flex items-center">
               <Link href="/" className="flex flex-col items-center">
                 <span className="text-xl font-bold text-[#a48eff]">바이브코딩</span>
-                <span className="text-xs text-gray-300 mt-[-4px]">돈버는방법</span>
+                <span className="text-xs text-gray-300 mt-[-4px]">돈버는 아이디어</span>
               </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
