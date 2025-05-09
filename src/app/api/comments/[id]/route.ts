@@ -4,21 +4,20 @@ import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export async function DELETE(
-  _: NextRequest,
-  context: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  
-  if (!session) {
-    return NextResponse.json(
-      { message: '인증되지 않은 요청입니다.' },
-      { status: 401 }
-    );
-  }
-  
-  const commentId = context.params.id;
-  
   try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session) {
+      return NextResponse.json(
+        { message: '인증되지 않은 요청입니다.' },
+        { status: 401 }
+      );
+    }
+    
+    const commentId = params.id;
     const supabase = supabaseAdmin;
     
     // 해당 댓글이 요청한 사용자의 것인지 확인
