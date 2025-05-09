@@ -72,8 +72,7 @@ export async function createUser(name: string, password: string): Promise<LocalU
     users.push(newUser);
     saveUsers(users);
 
-    // 비밀번호 제외하고 반환
-    const { password: _, ...userWithoutPassword } = newUser;
+    // 사용자 정보 반환
     return newUser;
   } catch (error) {
     console.error('사용자 생성 오류:', error);

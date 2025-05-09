@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const supabase = supabaseAdmin;
     
     // 이미 북마크가 있는지 확인
-    const { data: existingBookmark, error: checkError } = await supabase
+    const { data: existingBookmark } = await supabase
       .from('bookmarks')
       .select('id')
       .eq('user_id', session.user.id)

@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     const supabase = supabaseAdmin;
 
     // 아이디 중복 확인
-    const { data: existingUser, error: checkError } = await supabase
+    const { data: existingUser } = await supabase
       .from('users')
       .select('id')
       .eq('name', name)

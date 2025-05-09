@@ -1,9 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase';
-import { User, Idea, Comment, Bookmark } from '@/types/models';
-import bcrypt from 'bcryptjs';
+import { Idea, Comment } from '@/types/models';
 
 // 아이디어 관련 함수
-export async function getIdeas(limit = 10): Promise<any[]> {
+export async function getIdeas(limit = 10): Promise<Idea[]> {
   try {
     // 아이디어 목록 가져오기
     const { data: ideas, error } = await supabaseAdmin

@@ -33,7 +33,7 @@ export default function LoginPage() {
 
       router.push('/');
       router.refresh();
-    } catch (error) {
+    } catch (err) {
       setError('로그인 중 오류가 발생했습니다.');
       setIsLoading(false);
     }
