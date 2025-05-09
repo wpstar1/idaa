@@ -2,46 +2,47 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { Idea, Comment } from '@/types/models';
 
 // 아이디어 관련 함수
-export async function getIdeas(limit = 10): Promise<Idea[]> {
+export async function getIdeas(limit = 10): Promise<any[]> {
   try {
     // 아이디어 목록 가져오기
     const { data: ideas, error } = await supabaseAdmin
       .from('ideas')
-      .select('*')
+      .select(`
+        *,
+        comments:comments(id),
+        bookmarks:bookmarks(id)
+      `)
       .order('created_at', { ascending: false })
       .limit(limit);
     
     if (error) throw error;
+    if (!ideas || ideas.length === 0) return [];
     
-    // 각 아이디어에 대한 댓글 수와 북마크 수 추가
-    if (ideas && ideas.length > 0) {
-      const ideasWithCounts = await Promise.all(ideas.map(async (idea) => {
-        // 댓글 수 가져오기
-        const { count: commentCount, error: commentError } = await supabaseAdmin
-          .from('comments')
-          .select('id', { count: 'exact' })
-          .eq('idea_id', idea.id);
-          
-        // 북마크 수 가져오기
-        const { count: bookmarkCount, error: bookmarkError } = await supabaseAdmin
-          .from('bookmarks')
-          .select('id', { count: 'exact' })
-          .eq('idea_id', idea.id);
-          
-        return {
-          ...idea,
-          comment_count: commentError ? 0 : (commentCount || 0),
-          bookmark_count: bookmarkError ? 0 : (bookmarkCount || 0)
-        };
-      }));
-      
-      return ideasWithCounts;
-    }
+    // 결과 포맷팅
+    const ideasWithCounts = ideas.map(idea => ({
+      ...idea,
+      comment_count: idea.comments?.length || 0,
+      bookmark_count: idea.bookmarks?.length || 0,
+      // 중첩된 배열 제거
+      comments: undefined,
+      bookmarks: undefined
+    }));
     
-    return ideas || [];
+    return ideasWithCounts;
   } catch (error) {
     console.error('아이디어 조회 오류:', error);
-    return [];
+    // 기본 데이터 반환 (카운팅 없이)
+    const { data: basicIdeas } = await supabaseAdmin
+      .from('ideas')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+      
+    return (basicIdeas || []).map(idea => ({
+      ...idea,
+      comment_count: 0,
+      bookmark_count: 0
+    }));
   }
 }
 
