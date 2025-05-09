@@ -17,26 +17,27 @@ export default function LoginPage() {
     setIsLoading(true);
     setError('');
 
-    try {
-      // NextAuth의 credentials provider에 맞게 username으로 전송
-      const result = await signIn('credentials', {
-        redirect: false,
-        username, // email 대신 username 사용
-        password,
-      });
-
-      if (result?.error) {
-        setError('이메일 또는 비밀번호가 올바르지 않습니다.');
-        setIsLoading(false);
-        return;
-      }
-
-      router.push('/');
-      router.refresh();
-    } catch (_) {
+    // NextAuth의 credentials provider에 맞게 username으로 전송
+    const result = await signIn('credentials', {
+      redirect: false,
+      username, // email 대신 username 사용
+      password,
+    }).catch(() => {
       setError('로그인 중 오류가 발생했습니다.');
       setIsLoading(false);
+      return null;
+    });
+
+    if (!result) return;
+
+    if (result.error) {
+      setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+      setIsLoading(false);
+      return;
     }
+
+    router.push('/');
+    router.refresh();
   };
 
   return (
