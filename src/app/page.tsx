@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getIdeas, getAllTags } from '@/utils/supabase-utils';
 import Pagination from '@/components/Pagination';
 import TagFilter from '@/components/TagFilter';
+import SearchBar from '@/components/SearchBar';
 
 export default async function Home({ 
   searchParams 
@@ -30,6 +31,9 @@ export default async function Home({
     <main className="min-h-screen bg-[#151422] text-white px-4 py-8">
       <div className="container mx-auto max-w-6xl">
         <h1 className="text-3xl font-bold mb-8 text-center text-[#a48eff]">바이브코딩 돈버는 아이디어 모음</h1>
+        
+        {/* 검색창 추가 */}
+        <SearchBar />
         
         {/* 태그 필터 추가 */}
         <TagFilter tags={tags} currentTag={currentTag} />
