@@ -1,8 +1,21 @@
 import Link from 'next/link';
 import { getIdeas } from '@/utils/supabase-utils';
+import Pagination from '@/components/Pagination';
 
-export default async function Home() {
-  const ideas = await getIdeas(10);
+export default async function Home({ 
+  searchParams 
+}: { 
+  searchParams: { page?: string } 
+}) {
+  // 페이지네이션 처리
+  const currentPage = Number(searchParams.page) || 1;
+  const pageSize = 10; // 페이지당 아이디어 수
+  
+  // 페이지별 아이디어 가져오기
+  const { ideas, totalCount } = await getIdeas(pageSize, (currentPage - 1) * pageSize);
+  
+  // 전체 페이지 수 계산
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
     <main className="min-h-screen bg-[#151422] text-white px-4 py-8">
@@ -46,6 +59,13 @@ export default async function Home() {
         {ideas.length === 0 && (
           <div className="text-center py-20">
             <p className="text-gray-400">아직 등록된 아이디어가 없습니다.</p>
+          </div>
+        )}
+        
+        {/* 페이지네이션 추가 */}
+        {totalPages > 1 && (
+          <div className="mt-12">
+            <Pagination currentPage={currentPage} totalPages={totalPages} />
           </div>
         )}
       </div>

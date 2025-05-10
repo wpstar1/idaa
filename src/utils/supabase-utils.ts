@@ -2,8 +2,15 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { Idea, Comment } from '@/types/models';
 
 // 아이디어 관련 함수
-export async function getIdeas(limit = 10): Promise<any[]> {
+export async function getIdeas(limit = 10, offset = 0): Promise<{ ideas: any[], totalCount: number }> {
   try {
+    // 전체 아이디어 개수 조회
+    const { count: totalCount, error: countError } = await supabaseAdmin
+      .from('ideas')
+      .select('*', { count: 'exact', head: true });
+    
+    if (countError) throw countError;
+    
     // 아이디어 목록 가져오기
     const { data: ideas, error } = await supabaseAdmin
       .from('ideas')
@@ -13,10 +20,10 @@ export async function getIdeas(limit = 10): Promise<any[]> {
         bookmarks:bookmarks(id)
       `)
       .order('created_at', { ascending: false })
-      .limit(limit);
+      .range(offset, offset + limit - 1);
     
     if (error) throw error;
-    if (!ideas || ideas.length === 0) return [];
+    if (!ideas || ideas.length === 0) return { ideas: [], totalCount: totalCount || 0 };
     
     // 결과 포맷팅
     const ideasWithCounts = ideas.map(idea => ({
@@ -28,7 +35,7 @@ export async function getIdeas(limit = 10): Promise<any[]> {
       bookmarks: undefined
     }));
     
-    return ideasWithCounts;
+    return { ideas: ideasWithCounts, totalCount: totalCount || 0 };
   } catch (error) {
     console.error('아이디어 조회 오류:', error);
     // 기본 데이터 반환 (카운팅 없이)
@@ -36,13 +43,20 @@ export async function getIdeas(limit = 10): Promise<any[]> {
       .from('ideas')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(limit);
+      .range(offset, offset + limit - 1);
       
-    return (basicIdeas || []).map(idea => ({
-      ...idea,
-      comment_count: 0,
-      bookmark_count: 0
-    }));
+    const { count: totalCount } = await supabaseAdmin
+      .from('ideas')
+      .select('*', { count: 'exact', head: true });
+      
+    return {
+      ideas: (basicIdeas || []).map(idea => ({
+        ...idea,
+        comment_count: 0,
+        bookmark_count: 0
+      })),
+      totalCount: totalCount || 0
+    };
   }
 }
 
@@ -79,47 +93,18 @@ export async function getCommentsByIdeaId(ideaId: string): Promise<Comment[]> {
   }
 }
 
-export async function createComment(userId: string, ideaId: string, content: string): Promise<Comment | null> {
+export async function getCommentCount(ideaId: string): Promise<number> {
   try {
-    const { data, error } = await supabaseAdmin
+    const { count, error } = await supabaseAdmin
       .from('comments')
-      .insert([
-        { user_id: userId, idea_id: ideaId, content }
-      ])
-      .select('id, content, created_at, idea_id, user_id, users:user_id(id, name)')
-      .single();
+      .select('id', { count: 'exact' })
+      .eq('idea_id', ideaId);
     
     if (error) throw error;
-    return data;
+    return count || 0;
   } catch (error) {
-    console.error('댓글 생성 오류:', error);
-    return null;
-  }
-}
-
-export async function deleteComment(commentId: string, userId: string): Promise<boolean> {
-  try {
-    // 먼저 댓글이 해당 사용자의 것인지 확인
-    const { data: comment, error: checkError } = await supabaseAdmin
-      .from('comments')
-      .select('user_id')
-      .eq('id', commentId)
-      .single();
-    
-    if (checkError || !comment) return false;
-    if (comment.user_id !== userId) return false;
-    
-    // 댓글 삭제
-    const { error } = await supabaseAdmin
-      .from('comments')
-      .delete()
-      .eq('id', commentId);
-    
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error('댓글 삭제 오류:', error);
-    return false;
+    console.error('댓글 수 조회 오류:', error);
+    return 0;
   }
 }
 
