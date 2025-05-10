@@ -257,30 +257,108 @@ export async function getUserBookmarks(userId: string) {
   }
 }
 
-// 관련 아이디어 가져오기 (같은 태그의 다른 아이디어)
+// 텍스트 유사도 기반 관련 아이디어 가져오기
 export async function getRelatedIdeas(id: string, tag: string, limit: number = 3) {
   try {
-    // 같은 태그의 다른 아이디어 가져오기
-    const { data: ideas, error } = await supabaseAdmin
+    // 1. 현재 아이디어 정보 가져오기
+    const { data: currentIdea, error: currentError } = await supabaseAdmin
+      .from('ideas')
+      .select('id, title, summary, tag, target, revenue')
+      .eq('id', id)
+      .single();
+    
+    if (currentError) throw currentError;
+    if (!currentIdea) throw new Error('현재 아이디어를 찾을 수 없습니다.');
+    
+    // 검색 조건 만들기 (제목, 요약, 태그, 대상, 수익모델 포함)
+    const searchTerms = [
+      currentIdea.title,
+      currentIdea.summary?.substring(0, 100) || '', // 요약의 일부만 사용
+      currentIdea.tag || '',
+      currentIdea.target || '',
+      currentIdea.revenue || ''
+    ].filter(Boolean).join(' ');
+    
+    // 검색어 추출 (불용어 제거 및 특수문자 제거)
+    const keywords = searchTerms
+      .toLowerCase()
+      .replace(/[^\w\s가-힣]/g, '') // 특수문자 제거 (한글 포함)
+      .split(/\s+/)
+      .filter(word => word.length > 1) // 1글자 단어 제외
+      .filter(word => !['그리고', '또는', '그런', '이런', '저런', '등', '및'].includes(word)) // 한국어 불용어
+      .slice(0, 10); // 최대 10개 키워드만 사용
+    
+    // 2. 같은 태그의 관련 아이디어 우선 찾기 (2개)
+    const { data: sameTagIdeas, error: tagError } = await supabaseAdmin
       .from('ideas')
       .select(`
         id,
         title,
         summary,
         tag,
+        target,
+        revenue,
         comments:comments(id),
         bookmarks:bookmarks(id)
       `)
       .eq('tag', tag)
       .neq('id', id) // 현재 아이디어 제외
       .order('created_at', { ascending: false })
+      .limit(2);
+    
+    if (tagError) throw tagError;
+    
+    // 3. 키워드 기반 유사 아이디어 찾기
+    let similarIdeasQuery = supabaseAdmin
+      .from('ideas')
+      .select(`
+        id,
+        title,
+        summary,
+        tag,
+        target,
+        revenue,
+        comments:comments(id),
+        bookmarks:bookmarks(id)
+      `)
+      .neq('id', id); // 현재 아이디어 제외
+    
+    // 이미 가져온 태그 관련 아이디어도 제외
+    if (sameTagIdeas && sameTagIdeas.length > 0) {
+      const excludeIds = sameTagIdeas.map(idea => idea.id);
+      similarIdeasQuery = similarIdeasQuery.not('id', 'in', `(${excludeIds.join(',')})`);
+    }
+    
+    // 키워드별 필터 추가 (OR 조건)
+    const keywordConditions = keywords.map(keyword => 
+      `title.ilike.%${keyword}% OR summary.ilike.%${keyword}% OR target.ilike.%${keyword}% OR revenue.ilike.%${keyword}%`
+    );
+    
+    if (keywordConditions.length > 0) {
+      similarIdeasQuery = similarIdeasQuery.or(keywordConditions.join(','));
+    }
+    
+    const { data: similarIdeas, error: similarError } = await similarIdeasQuery
+      .order('created_at', { ascending: false })
       .limit(limit);
     
-    if (error) throw error;
+    if (similarError) throw similarError;
     
-    // 결과가 limit보다 적으면 다른 최신 아이디어로 채우기
-    if (!ideas || ideas.length < limit) {
-      const remainingCount = limit - (ideas?.length || 0);
+    // 4. 결과 병합 (태그 관련 + 키워드 관련)
+    const combinedIdeas = [
+      ...(sameTagIdeas || []),
+      ...(similarIdeas || [])
+    ];
+    
+    // 결과가 limit 미만이면 최신 아이디어로 보충
+    if (combinedIdeas.length < limit) {
+      const remainingCount = limit - combinedIdeas.length;
+      
+      // 이미 포함된 아이디어 ID 목록
+      const excludeIds = [
+        id, // 현재 아이디어
+        ...combinedIdeas.map(idea => idea.id)
+      ];
       
       const { data: recentIdeas, error: recentError } = await supabaseAdmin
         .from('ideas')
@@ -289,33 +367,25 @@ export async function getRelatedIdeas(id: string, tag: string, limit: number = 3
           title,
           summary,
           tag,
+          target,
+          revenue,
           comments:comments(id),
           bookmarks:bookmarks(id)
         `)
-        .neq('id', id)
-        .neq('tag', tag) // 이미 가져온 태그 제외
+        .not('id', 'in', `(${excludeIds.join(',')})`)
         .order('created_at', { ascending: false })
         .limit(remainingCount);
       
       if (recentError) throw recentError;
       
-      // 결과 포맷팅 및 병합
-      const relatedIdeas = [
-        ...(ideas || []),
-        ...(recentIdeas || [])
-      ].map(idea => ({
-        ...idea,
-        comment_count: idea.comments?.length || 0,
-        bookmark_count: idea.bookmarks?.length || 0,
-        comments: undefined,
-        bookmarks: undefined
-      }));
-      
-      return relatedIdeas;
+      // 최신 아이디어 추가
+      if (recentIdeas) {
+        combinedIdeas.push(...recentIdeas);
+      }
     }
     
-    // 결과 포맷팅
-    const formattedIdeas = ideas.map(idea => ({
+    // 5. 최종 결과 제한 및 포맷팅
+    const finalIdeas = combinedIdeas.slice(0, limit).map(idea => ({
       ...idea,
       comment_count: idea.comments?.length || 0,
       bookmark_count: idea.bookmarks?.length || 0,
@@ -323,7 +393,7 @@ export async function getRelatedIdeas(id: string, tag: string, limit: number = 3
       bookmarks: undefined
     }));
     
-    return formattedIdeas;
+    return finalIdeas;
   } catch (error) {
     console.error('관련 아이디어 조회 오류:', error);
     return [];
