@@ -32,7 +32,11 @@ export default async function Home({
                     {idea.tag || '기타'}
                   </span>
                 </div>
-                <p className="text-gray-300 mb-5 line-clamp-2">{idea.summary}</p>
+                
+                {/* 요약 텍스트 - line-clamp-2에서 line-clamp-4로 변경하여 더 많은 내용 표시 */}
+                <p className="text-gray-300 mb-5 line-clamp-4 text-sm leading-relaxed">
+                  {idea.summary}
+                </p>
                 
                 <div className="text-sm text-gray-400 space-y-1 mb-5">
                   <div><span className="text-[#a48eff] font-medium">대상:</span> {idea.target || '모든 사용자'}</div>
