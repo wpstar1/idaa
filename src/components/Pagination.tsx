@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 interface PaginationProps {
   currentPage: number;
@@ -10,6 +10,14 @@ interface PaginationProps {
 
 export default function Pagination({ currentPage, totalPages }: PaginationProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  
+  // 현재 URL 파라미터를 유지하면서 페이지만 변경하는 함수
+  const createPageUrl = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('page', page.toString());
+    return `${pathname}?${params.toString()}`;
+  };
   
   // 표시할 페이지 번호 범위 (현재 페이지 주변에 최대 2개씩)
   const getPageNumbers = () => {
@@ -56,7 +64,7 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
       {/* 이전 페이지 버튼 */}
       {currentPage > 1 && (
         <Link
-          href={`${pathname}?page=${currentPage - 1}`}
+          href={createPageUrl(currentPage - 1)}
           className="px-3 py-2 rounded-md bg-[#2d2b42] text-gray-300 hover:bg-[#3a384f] transition-colors"
         >
           이전
@@ -70,7 +78,7 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
             <span className="px-3 py-2 text-gray-400">...</span>
           ) : (
             <Link
-              href={`${pathname}?page=${page}`}
+              href={createPageUrl(page as number)}
               className={`px-3 py-2 rounded-md transition-colors ${
                 currentPage === page
                   ? 'bg-[#a48eff] text-white'
@@ -86,7 +94,7 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
       {/* 다음 페이지 버튼 */}
       {currentPage < totalPages && (
         <Link
-          href={`${pathname}?page=${currentPage + 1}`}
+          href={createPageUrl(currentPage + 1)}
           className="px-3 py-2 rounded-md bg-[#2d2b42] text-gray-300 hover:bg-[#3a384f] transition-colors"
         >
           다음

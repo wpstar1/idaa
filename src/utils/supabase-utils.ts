@@ -2,25 +2,45 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { Idea, Comment } from '@/types/models';
 
 // 아이디어 관련 함수
-export async function getIdeas(limit = 10, offset = 0): Promise<{ ideas: any[], totalCount: number }> {
+export async function getIdeas(
+  limit = 10, 
+  offset = 0, 
+  tag?: string
+): Promise<{ ideas: any[], totalCount: number }> {
   try {
-    // 전체 아이디어 개수 조회
-    const { count: totalCount, error: countError } = await supabaseAdmin
+    // 전체 아이디어 개수 조회를 위한 쿼리 빌더
+    let countQuery = supabaseAdmin
       .from('ideas')
       .select('*', { count: 'exact', head: true });
     
+    // 태그 필터링이 있으면 적용
+    if (tag) {
+      countQuery = countQuery.eq('tag', tag);
+    }
+    
+    const { count: totalCount, error: countError } = await countQuery;
+    
     if (countError) throw countError;
     
-    // 아이디어 목록 가져오기
-    const { data: ideas, error } = await supabaseAdmin
+    // 아이디어 목록 가져오기 위한 쿼리 빌더
+    let dataQuery = supabaseAdmin
       .from('ideas')
       .select(`
         *,
         comments:comments(id),
         bookmarks:bookmarks(id)
       `)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .order('created_at', { ascending: false });
+    
+    // 태그 필터링이 있으면 적용
+    if (tag) {
+      dataQuery = dataQuery.eq('tag', tag);
+    }
+    
+    // 페이지네이션 적용
+    dataQuery = dataQuery.range(offset, offset + limit - 1);
+    
+    const { data: ideas, error } = await dataQuery;
     
     if (error) throw error;
     if (!ideas || ideas.length === 0) return { ideas: [], totalCount: totalCount || 0 };
@@ -39,15 +59,33 @@ export async function getIdeas(limit = 10, offset = 0): Promise<{ ideas: any[], 
   } catch (error) {
     console.error('아이디어 조회 오류:', error);
     // 기본 데이터 반환 (카운팅 없이)
-    const { data: basicIdeas } = await supabaseAdmin
+    // 쿼리 빌더
+    let fallbackQuery = supabaseAdmin
       .from('ideas')
       .select('*')
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-      
-    const { count: totalCount } = await supabaseAdmin
+      .order('created_at', { ascending: false });
+    
+    // 태그 필터링 적용
+    if (tag) {
+      fallbackQuery = fallbackQuery.eq('tag', tag);
+    }
+    
+    // 페이지네이션 적용
+    fallbackQuery = fallbackQuery.range(offset, offset + limit - 1);
+    
+    const { data: basicIdeas } = await fallbackQuery;
+    
+    // 카운트 쿼리
+    let countQuery = supabaseAdmin
       .from('ideas')
       .select('*', { count: 'exact', head: true });
+    
+    // 태그 필터링 적용
+    if (tag) {
+      countQuery = countQuery.eq('tag', tag);
+    }
+    
+    const { count: totalCount } = await countQuery;
       
     return {
       ideas: (basicIdeas || []).map(idea => ({
@@ -57,6 +95,35 @@ export async function getIdeas(limit = 10, offset = 0): Promise<{ ideas: any[], 
       })),
       totalCount: totalCount || 0
     };
+  }
+}
+
+// 모든 태그 목록 가져오기
+export async function getAllTags(): Promise<{ tag: string; count: number }[]> {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('ideas')
+      .select('tag');
+    
+    if (error) throw error;
+    
+    // 태그별 카운트
+    const tagCounts: Record<string, number> = {};
+    
+    // 태그 카운팅 (null이나 빈 문자열은 '기타'로 처리)
+    data.forEach(item => {
+      const tag = item.tag || '기타';
+      tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+    });
+    
+    // 배열로 변환 후 개수 기준 내림차순 정렬
+    const tagsArray = Object.entries(tagCounts).map(([tag, count]) => ({ tag, count }));
+    tagsArray.sort((a, b) => b.count - a.count);
+    
+    return tagsArray;
+  } catch (error) {
+    console.error('태그 목록 조회 오류:', error);
+    return [];
   }
 }
 

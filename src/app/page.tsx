@@ -1,18 +1,27 @@
 import Link from 'next/link';
-import { getIdeas } from '@/utils/supabase-utils';
+import { getIdeas, getAllTags } from '@/utils/supabase-utils';
 import Pagination from '@/components/Pagination';
+import TagFilter from '@/components/TagFilter';
 
 export default async function Home({ 
   searchParams 
 }: { 
-  searchParams: { page?: string } 
+  searchParams: { page?: string, tag?: string } 
 }) {
-  // 페이지네이션 처리
+  // 페이지네이션 및 태그 필터 처리
   const currentPage = Number(searchParams.page) || 1;
+  const currentTag = searchParams.tag || '';
   const pageSize = 10; // 페이지당 아이디어 수
   
-  // 페이지별 아이디어 가져오기
-  const { ideas, totalCount } = await getIdeas(pageSize, (currentPage - 1) * pageSize);
+  // 태그별 아이디어 개수 가져오기
+  const tags = await getAllTags();
+  
+  // 페이지별 아이디어 가져오기 (태그 필터 적용)
+  const { ideas, totalCount } = await getIdeas(
+    pageSize, 
+    (currentPage - 1) * pageSize,
+    currentTag || undefined
+  );
   
   // 전체 페이지 수 계산
   const totalPages = Math.ceil(totalCount / pageSize);
@@ -20,7 +29,10 @@ export default async function Home({
   return (
     <main className="min-h-screen bg-[#151422] text-white px-4 py-8">
       <div className="container mx-auto max-w-6xl">
-        <h1 className="text-3xl font-bold mb-12 text-center text-[#a48eff]">바이브코딩 돈버는 아이디어 모음</h1>
+        <h1 className="text-3xl font-bold mb-8 text-center text-[#a48eff]">바이브코딩 돈버는 아이디어 모음</h1>
+        
+        {/* 태그 필터 추가 */}
+        <TagFilter tags={tags} currentTag={currentTag} />
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {ideas.map((idea) => (
