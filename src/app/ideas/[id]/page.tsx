@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
-import { getIdeaById, getCommentsByIdeaId } from '@/utils/supabase-utils';
+import Link from 'next/link';
+import { getIdeaById, getCommentsByIdeaId, getRelatedIdeas } from '@/utils/supabase-utils';
 import CommentSection from '@/components/CommentSection';
 import BookmarkButton from '@/components/BookmarkButton';
 import CopyPromptButton from '@/components/CopyPromptButton';
@@ -28,10 +29,13 @@ export default async function IdeaDetailPage({ params }: { params: { id: string 
   const id = params?.id;
   const idea = await getIdeaById(id);
   const comments = await getCommentsByIdeaId(id);
-
+  
   if (!idea) {
     notFound();
   }
+  
+  // 관련 아이디어 가져오기 (같은 태그 or 최신 아이디어)
+  const relatedIdeas = await getRelatedIdeas(id, idea.tag || '', 3);
 
   // 프롬프트 생성 (AI가 바로 만들 수 있는 형식)
   const prompt = `# ${idea.title} 개발 요청
@@ -121,6 +125,33 @@ ${idea.revenue || '후원 기반 또는 프리미엄 구독 모델'}
             </div>
           </div>
 
+          {relatedIdeas.length > 0 && (
+            <div className="mt-10 pt-6 border-t border-[#2d2b42]">
+              <h3 className="text-xl font-bold text-white mb-4">관련 아이디어</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {relatedIdeas.map((relatedIdea) => (
+                  <Link
+                    href={`/ideas/${relatedIdea.id}`}
+                    key={relatedIdea.id}
+                    className="block bg-[#1e1c31] border border-[#2d2b42] p-4 rounded-lg hover:bg-[#2d2b42] transition-colors"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="text-md font-semibold text-white">{relatedIdea.title}</h4>
+                      <span className="bg-[#2d2b42] text-[#a48eff] text-xs px-2 py-1 rounded-full">
+                        {relatedIdea.tag || '기타'}
+                      </span>
+                    </div>
+                    <p className="text-gray-400 text-sm line-clamp-2">{relatedIdea.summary}</p>
+                    <div className="flex justify-end mt-2 text-xs text-gray-500">
+                      <span className="mr-2">💬 {relatedIdea.comment_count || 0}</span>
+                      <span>⭐ {relatedIdea.bookmark_count || 0}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+          
           <div className="mt-10 pt-6 border-t border-[#2d2b42]">
             <CommentSection ideaId={idea.id} initialComments={comments} />
           </div>

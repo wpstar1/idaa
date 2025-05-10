@@ -189,3 +189,76 @@ export async function getUserBookmarks(userId: string) {
     return [];
   }
 }
+
+// 관련 아이디어 가져오기 (같은 태그의 다른 아이디어)
+export async function getRelatedIdeas(id: string, tag: string, limit: number = 3) {
+  try {
+    // 같은 태그의 다른 아이디어 가져오기
+    const { data: ideas, error } = await supabaseAdmin
+      .from('ideas')
+      .select(`
+        id,
+        title,
+        summary,
+        tag,
+        comments:comments(id),
+        bookmarks:bookmarks(id)
+      `)
+      .eq('tag', tag)
+      .neq('id', id) // 현재 아이디어 제외
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    
+    if (error) throw error;
+    
+    // 결과가 limit보다 적으면 다른 최신 아이디어로 채우기
+    if (!ideas || ideas.length < limit) {
+      const remainingCount = limit - (ideas?.length || 0);
+      
+      const { data: recentIdeas, error: recentError } = await supabaseAdmin
+        .from('ideas')
+        .select(`
+          id,
+          title,
+          summary,
+          tag,
+          comments:comments(id),
+          bookmarks:bookmarks(id)
+        `)
+        .neq('id', id)
+        .neq('tag', tag) // 이미 가져온 태그 제외
+        .order('created_at', { ascending: false })
+        .limit(remainingCount);
+      
+      if (recentError) throw recentError;
+      
+      // 결과 포맷팅 및 병합
+      const relatedIdeas = [
+        ...(ideas || []),
+        ...(recentIdeas || [])
+      ].map(idea => ({
+        ...idea,
+        comment_count: idea.comments?.length || 0,
+        bookmark_count: idea.bookmarks?.length || 0,
+        comments: undefined,
+        bookmarks: undefined
+      }));
+      
+      return relatedIdeas;
+    }
+    
+    // 결과 포맷팅
+    const formattedIdeas = ideas.map(idea => ({
+      ...idea,
+      comment_count: idea.comments?.length || 0,
+      bookmark_count: idea.bookmarks?.length || 0,
+      comments: undefined,
+      bookmarks: undefined
+    }));
+    
+    return formattedIdeas;
+  } catch (error) {
+    console.error('관련 아이디어 조회 오류:', error);
+    return [];
+  }
+}
