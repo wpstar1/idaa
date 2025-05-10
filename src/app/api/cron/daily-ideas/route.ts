@@ -133,18 +133,15 @@ async function generateBusinessIdeas(count = 5) {
     // 매번 다른 백업 아이디어를 제공하기 위해 백업 아이디어를 무작위로 섞음
     const shuffledBackups = [...backupIdeas].sort(() => 0.5 - Math.random());
     
-    // 정확한 타임스탬프로 중복 방지
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    
     // count만큼 아이디어 선택 (중복 가능)
     const randomIdeas = [];
     for (let i = 0; i < count; i++) {
       const randomIndex = Math.floor(Math.random() * backupIdeas.length);
-      // 제목에 타임스탬프 추가하여 중복 방지
-      const idea = JSON.parse(JSON.stringify(shuffledBackups[randomIndex % shuffledBackups.length]));
-      idea.title = `${idea.title} [${timestamp}-${i}]`;
       
-      // 내용에도 약간의 변형 추가
+      // 제목에 타임스탬프를 추가하지 않고 원본 제목 그대로 사용
+      const idea = JSON.parse(JSON.stringify(shuffledBackups[randomIndex % shuffledBackups.length]));
+      
+      // 내용에 약간의 변형 추가 (하지만 제목은 수정하지 않음)
       const variations = [
         '최신 트렌드 반영', '2025년 시장 동향 적용', '신규 비즈니스 모델', 
         '성장 가능성 높음', '투자 유치 용이', '낮은 초기 비용'
@@ -158,6 +155,11 @@ async function generateBusinessIdeas(count = 5) {
   }
 }
 
+// 고유 ID 생성 함수 (중복 방지용)
+function generateUniqueId() {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2);
+}
+
 export async function GET() {
   try {
     console.log('GPT API를 통한 비즈니스 아이디어 생성 시작...');
@@ -169,9 +171,30 @@ export async function GET() {
       newIdeas.map(idea => idea.title).join(', '));
     
     // 아이디어 바로 추가 (중복 체크 건너뛰기)
+    // 하지만 완전히 같은 제목의 아이디어가 있는지는 확인
+    const { data: existingIdeas } = await supabaseAdmin
+      .from('ideas')
+      .select('title')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    
+    const existingTitles = existingIdeas?.map(idea => idea.title) || [];
+    
+    // 이미 존재하는 제목인 경우, 고유 ID를 추가하지만 표시되지 않는 방식으로 처리
+    const processedIdeas = newIdeas.map(idea => {
+      const processed = { ...idea };
+      
+      // 같은 제목이 있으면 내부적으로만 사용되는 _uniqueId 필드를 추가
+      if (existingTitles.includes(processed.title)) {
+        processed._uniqueId = generateUniqueId();
+      }
+      
+      return processed;
+    });
+    
     const { data, error } = await supabaseAdmin
       .from('ideas')
-      .insert(newIdeas)
+      .insert(processedIdeas)
       .select();
     
     if (error) {
